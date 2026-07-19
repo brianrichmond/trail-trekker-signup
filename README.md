@@ -1,8 +1,8 @@
-# ECTT Sign-up Sheet Tool
+# Sheet Scan Tool
+Converts paper sign-up sheet photos or PDFs into a CSV for import into a mail handling platform or other database. Built initially for the El Cerrito Trail Trekkers and El Cerrito Fire Safe Council.
 
-Converts paper sign-up sheet photos or PDFs into a CSV for Mailchimp import. Built for the El Cerrito Trail Trekkers.
 
-**Live site:** `https://brianrichmond.github.io/trail-trekker-signup/`
+**Live site:** `https://brianrichmond.github.io/sheet-scan/`
 
 ---
 
