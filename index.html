@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign-up Sheet Tool · El Cerrito Trail Trekkers</title>
+<style>
+  :root {
+    --green: #2d5a27;
+    --green-light: #e8f0e7;
+    --green-mid: #4a7c43;
+    --tan: #f5f2ed;
+    --text: #1a1a18;
+    --text-muted: #6b6b60;
+    --border: #d4cfc7;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--tan); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: var(--green);
+    color: #fff;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header h1 { font-size: 20px; font-weight: 500; }
+  header p { font-size: 13px; opacity: 0.75; margin-top: 3px; }
+
+  main { max-width: 640px; margin: 0 auto; padding: 36px 20px 60px; }
+
+  .intro { font-size: 16px; line-height: 1.6; color: var(--text); margin-bottom: 32px; }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    margin-bottom: 16px;
+  }
+  .card-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--green); color: #fff;
+    font-size: 14px; font-weight: 600;
+    margin-bottom: 10px; flex-shrink: 0;
+  }
+  .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--green); }
+  .card p { font-size: 14px; line-height: 1.6; color: var(--text-muted); }
+  .card p + p { margin-top: 8px; }
+  .card a { color: var(--green-mid); }
+
+  .tip {
+    background: var(--green-light);
+    border: 1px solid #c2d9be;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+  .tip strong { color: var(--green); }
+
+  .launch {
+    display: block;
+    background: var(--green);
+    color: #fff;
+    text-decoration: none;
+    text-align: center;
+    padding: 16px 24px;
+    border-radius: var(--radius);
+    font-size: 17px;
+    font-weight: 500;
+    margin: 32px 0 12px;
+    transition: background 0.15s;
+  }
+  .launch:hover { background: var(--green-mid); }
+  .launch-sub { text-align: center; font-size: 13px; color: var(--text-muted); }
+
+  footer { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 48px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Sign-up Sheet Tool</h1>
+    <p>El Cerrito Trail Trekkers</p>
+  </div>
+</header>
+
+<main>
+  <p class="intro">This tool reads a photo or scan of a paper sign-up sheet and converts it into a spreadsheet file you can import into Mailchimp.</p>
+
+  <div class="card">
+    <div class="card-num">1</div>
+    <h2>Set up your API key (first time only)</h2>
+    <p>The tool uses an AI service to read handwriting. You'll need an API key — contact your Trail Trekkers coordinator to get one, or create your own free account at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.</p>
+    <p>Once you have a key, paste it into the app and click <strong>Save key</strong>. You won't need to enter it again on this device.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-num">2</div>
+    <h2>Take a photo of the sign-up sheet</h2>
+    <p>Good lighting and a straight-on angle give the best results. The sheet should fill most of the frame.</p>
+    <div class="tip">
+      <strong>iPhone tip:</strong> Go to Settings → Camera → Formats → select <strong>Most Compatible</strong>. Do this once and your photos will always upload correctly. If you've already taken a photo in the old format, open it in Photos, tap Share, and choose <strong>Save to Files</strong> — this converts it automatically.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-num">3</div>
+    <h2>Upload and download</h2>
+    <p>Open the app, drag your photo or PDF into the upload area, and click <strong>Extract &amp; build CSV</strong>. Review the preview to spot any errors, then click <strong>Download CSV</strong>.</p>
+    <p>The CSV is ready to import directly into Mailchimp or open in Excel or Google Sheets.</p>
+  </div>
+
+  <a class="launch" href="signup-to-csv.html">Open the app →</a>
+  <p class="launch-sub">Works in any modern browser on Mac or PC</p>
+
+  <footer>El Cerrito Trail Trekkers · sign-up sheet tool</footer>
+</main>
+
+</body>
+</html>
