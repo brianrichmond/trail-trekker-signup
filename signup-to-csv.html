@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign-up Sheet → CSV · El Cerrito Trail Trekkers</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root {
+    --green: #2d5a27;
+    --green-light: #e8f0e7;
+    --green-mid: #4a7c43;
+    --tan: #f5f2ed;
+    --text: #1a1a18;
+    --text-muted: #6b6b60;
+    --border: #d4cfc7;
+    --red: #b94040;
+    --red-bg: #fdf0f0;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Georgia', serif; background: var(--tan); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: var(--green);
+    color: #fff;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header svg { flex-shrink: 0; opacity: 0.9; }
+  header h1 { font-size: 18px; font-weight: normal; letter-spacing: 0.01em; }
+  header p { font-size: 13px; opacity: 0.75; font-family: 'Helvetica Neue', sans-serif; margin-top: 2px; }
+
+  main { max-width: 720px; margin: 0 auto; padding: 32px 20px 60px; }
+
+  /* API Key section */
+  #key-section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 24px;
+  }
+  #key-section h2 { font-size: 14px; font-weight: bold; font-family: 'Helvetica Neue', sans-serif; margin-bottom: 6px; color: var(--green); letter-spacing: 0.04em; text-transform: uppercase; }
+  #key-section p { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; font-family: 'Helvetica Neue', sans-serif; line-height: 1.5; }
+  .key-row { display: flex; gap: 8px; }
+  #api-key-input {
+    flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font-family: 'Courier New', monospace; font-size: 13px; color: var(--text);
+    background: var(--tan);
+  }
+  #api-key-input:focus { outline: none; border-color: var(--green-mid); }
+  .btn {
+    padding: 9px 18px; border-radius: 6px; border: none; cursor: pointer;
+    font-family: 'Helvetica Neue', sans-serif; font-size: 13px; font-weight: 500;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+  .btn-primary { background: var(--green); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--green-mid); }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+  .btn-ghost:hover:not(:disabled) { background: var(--green-light); color: var(--green); border-color: var(--green-mid); }
+  #key-saved { font-size: 12px; color: var(--green-mid); font-family: 'Helvetica Neue', sans-serif; margin-top: 8px; display: none; }
+
+  /* Drop zone */
+  #drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: #fff;
+    margin-bottom: 20px;
+  }
+  #drop-zone:hover, #drop-zone.drag-over { border-color: var(--green-mid); background: var(--green-light); }
+  #drop-zone svg { display: block; margin: 0 auto 14px; color: var(--green-mid); }
+  #drop-zone .dz-title { font-size: 16px; color: var(--text); margin-bottom: 4px; }
+  #drop-zone .dz-sub { font-size: 13px; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; }
+  #file-input { display: none; }
+
+  /* File list */
+  #file-list { margin-bottom: 16px; }
+  .file-pill {
+    display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 14px; margin-bottom: 8px;
+    font-family: 'Helvetica Neue', sans-serif; font-size: 13px;
+  }
+  .file-pill .fname { flex: 1; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-pill .fstatus { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .file-pill .fstatus.done { color: var(--green-mid); }
+  .file-pill .fstatus.err { color: var(--red); }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Actions */
+  #actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+
+  /* Error */
+  #error-msg { background: var(--red-bg); border: 1px solid #e8b0b0; border-radius: var(--radius); padding: 12px 16px; font-size: 13px; color: var(--red); font-family: 'Helvetica Neue', sans-serif; display: none; margin-bottom: 16px; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
+
+  /* Preview */
+  #preview-area { display: none; }
+  #preview-area h2 { font-size: 14px; font-weight: bold; font-family: 'Helvetica Neue', sans-serif; color: var(--green); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 10px; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: 'Helvetica Neue', sans-serif; }
+  th { background: var(--green-light); padding: 9px 12px; text-align: left; font-weight: 600; color: var(--green); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 8px 12px; border-bottom: 1px solid #eee; color: var(--text); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--tan); }
+
+  a { color: var(--green-mid); }
+  footer { text-align: center; font-size: 12px; color: var(--text-muted); font-family: 'Helvetica Neue', sans-serif; margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+    <path d="M16 4 C10 4 5 9 5 16 C5 23 10 28 16 28 C22 28 27 23 27 16 C27 9 22 4 16 4Z" fill="rgba(255,255,255,0.15)" stroke="white" stroke-width="1.5"/>
+    <path d="M11 16 Q13 10 16 8 Q19 10 21 16 Q19 22 16 24 Q13 22 11 16Z" fill="rgba(255,255,255,0.25)" stroke="white" stroke-width="1"/>
+    <circle cx="16" cy="16" r="2.5" fill="white"/>
+  </svg>
+  <div>
+    <h1>Sign-up Sheet → CSV</h1>
+    <p>El Cerrito Trail Trekkers · event roster tool</p>
+  </div>
+</header>
+
+<main>
+
+  <div id="key-section">
+    <h2>Anthropic API Key</h2>
+    <p>Your key is stored only in this browser — never sent anywhere except directly to Anthropic to read the sheet images. Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.</p>
+    <div class="key-row">
+      <input type="password" id="api-key-input" placeholder="sk-ant-…" autocomplete="off">
+      <button class="btn btn-primary" onclick="saveKey()">Save key</button>
+      <button class="btn btn-ghost" onclick="clearKey()">Clear</button>
+    </div>
+    <div id="key-saved">✓ Key saved in this browser</div>
+  </div>
+
+  <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <div class="dz-title">Click to upload, or drag files here</div>
+    <div class="dz-sub">PDF · JPG · JPEG · PNG — one or more sign-up sheets</div>
+  </div>
+  <input type="file" id="file-input" multiple accept=".pdf,.jpg,.jpeg,.png,image/jpeg,image/png,application/pdf">
+
+  <div id="file-list"></div>
+  <div id="error-msg"></div>
+
+  <div id="actions">
+    <button class="btn btn-primary" id="btn-extract" disabled onclick="runExtraction()">Extract &amp; build CSV</button>
+    <button class="btn btn-ghost" id="btn-download" style="display:none" onclick="downloadCSV()">Download CSV</button>
+    <button class="btn btn-ghost" onclick="clearAll()">Clear all</button>
+  </div>
+
+  <div id="preview-area">
+    <h2 id="preview-label">Preview</h2>
+    <div class="table-wrap"><table id="preview-table"></table></div>
+  </div>
+
+  <footer>Reads sign-up sheets using the Claude API · data never stored</footer>
+</main>
+
+<script>
+// ── API key ──────────────────────────────────────────────────────────────────
+function saveKey() {
+  const v = document.getElementById('api-key-input').value.trim();
+  if (!v) return;
+  localStorage.setItem('ectt_api_key', v);
+  document.getElementById('key-saved').style.display = 'block';
+}
+function clearKey() {
+  localStorage.removeItem('ectt_api_key');
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('key-saved').style.display = 'none';
+}
+function getKey() { return localStorage.getItem('ectt_api_key') || document.getElementById('api-key-input').value.trim(); }
+
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('ectt_api_key');
+  if (saved) {
+    document.getElementById('api-key-input').value = saved;
+    document.getElementById('key-saved').style.display = 'block';
+  }
+});
+
+// ── File handling ─────────────────────────────────────────────────────────────
+const FILES = [];
+let csvData = [];
+const COL_KEYS = ['Email Address','First Name','Last Name','Address','Phone','Signup Date','Signup Event','Event Source Raw','Event Source'];
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const fileList  = document.getElementById('file-list');
+const btnExtract = document.getElementById('btn-extract');
+const btnDownload = document.getElementById('btn-download');
+const previewArea = document.getElementById('preview-area');
+const errorEl = document.getElementById('error-msg');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles([...e.dataTransfer.files]); });
+fileInput.addEventListener('change', () => { handleFiles([...fileInput.files]); fileInput.value=''; });
+
+function handleFiles(newFiles) {
+  newFiles.forEach(f => {
+    if (!FILES.find(x => x.name === f.name)) {
+      FILES.push({ file: f, name: f.name, status: 'ready', rows: [] });
+      renderPill(FILES[FILES.length-1]);
+    }
+  });
+  btnExtract.disabled = FILES.length === 0;
+  errorEl.style.display = 'none';
+}
+
+function safeid(n) { return n.replace(/[^a-z0-9]/gi,'_'); }
+
+function renderPill(entry) {
+  const div = document.createElement('div');
+  div.className = 'file-pill'; div.id = 'pill-'+safeid(entry.name);
+  div.innerHTML = `<span class="fname">${entry.name}</span><span class="fstatus" id="fst-${safeid(entry.name)}">Ready</span>`;
+  fileList.appendChild(div);
+}
+
+function updatePill(entry, msg) {
+  const el   = document.getElementById('fst-'+safeid(entry.name));
+  const pill = document.getElementById('pill-'+safeid(entry.name));
+  if (!el) return;
+  el.className = 'fstatus ' + entry.status;
+  const sp = pill.querySelector('.spinner');
+  if (entry.status === 'loading') {
+    if (!sp) { const s = document.createElement('div'); s.className='spinner'; pill.insertBefore(s,el); }
+    el.textContent = msg || 'Processing…';
+  } else {
+    if (sp) sp.remove();
+    if (entry.status === 'done') el.textContent = `Done — ${entry.rows.length} row(s)`;
+    else if (entry.status === 'err') el.textContent = 'Error';
+    else el.textContent = msg || entry.status;
+  }
+}
+
+// ── PDF → images ──────────────────────────────────────────────────────────────
+async function pdfToImages(file) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const imgs = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const vp = page.getViewport({ scale: 2.0 });
+    const canvas = document.createElement('canvas');
+    canvas.width = vp.width; canvas.height = vp.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+    imgs.push(canvas.toDataURL('image/jpeg', 0.92).split(',')[1]);
+  }
+  return imgs;
+}
+
+async function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(file);
+  });
+}
+
+function getMediaType(file) {
+  if (file.type && file.type !== 'application/octet-stream') return file.type;
+  const ext = file.name.split('.').pop().toLowerCase();
+  return { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', pdf: 'application/pdf' }[ext] || 'image/jpeg';
+}
+
+// ── Claude extraction ─────────────────────────────────────────────────────────
+const PROMPT = `Extract all attendee records from this sign-up sheet image. Return ONLY a valid JSON array — no markdown, no code fences, no explanation.
+
+Each element: {
+  "email": string,
+  "first_name": string,
+  "last_name": string,
+  "address": string,
+  "phone": string,
+  "signup_date": "YYYY-MM-DD if possible, else as written",
+  "signup_event": "event name from header",
+  "event_source_raw": "verbatim How-did-you-hear value, or empty string",
+  "event_source": one of: "word of mouth" (friends/neighbors/person names/referrals), "El Cerrito website" (city website refs), "social media" (Facebook/Instagram/NextDoor/online), "email" (newsletter/mailing list), "flyer / poster" (flyers/signs/handouts), "organizer" (organizer/staff), "other" (anything else), or "" if raw is empty
+}
+
+Skip completely blank rows. Return only the JSON array.`;
+
+async function extractWithClaude(base64img, mediaType) {
+  const key = getKey();
+  if (!key) throw new Error('No API key set. Enter your Anthropic API key above.');
+
+  let resp;
+  try {
+    resp = await fetch('https://gentle-lake-2a35.brian-richmond.workers.dev/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType || 'image/jpeg', data: base64img } },
+            { type: 'text', text: PROMPT }
+          ]
+        }]
+      })
+    });
+  } catch (networkErr) {
+    throw new Error(`Network error — check your internet connection and that the API key is correct.\nDetail: ${networkErr.message}`);
+  }
+
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`API error ${resp.status}: ${txt}`);
+  }
+  const data = await resp.json();
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  const text = data.content.map(b => b.text||'').join('').trim().replace(/^```[a-z]*\n?/,'').replace(/\n?```$/,'').trim();
+  return JSON.parse(text);
+}
+
+async function extractFile(entry) {
+  entry.status = 'loading'; updatePill(entry, 'Reading file…');
+  const mediaType = getMediaType(entry.file);
+  const isPDF = mediaType === 'application/pdf';
+  let pages; let pageMediaType = 'image/jpeg';
+  if (isPDF) { updatePill(entry, 'Rendering PDF…'); pages = await pdfToImages(entry.file); }
+  else { pages = [await fileToBase64(entry.file)]; pageMediaType = mediaType; }
+
+  entry.rows = [];
+  for (let i = 0; i < pages.length; i++) {
+    updatePill(entry, pages.length > 1 ? `Extracting page ${i+1}/${pages.length}…` : 'Extracting…');
+    const rows = await extractWithClaude(pages[i], pageMediaType);
+    rows.forEach(r => entry.rows.push({
+      'Email Address':     r.email||'',
+      'First Name':        r.first_name||'',
+      'Last Name':         r.last_name||'',
+      'Address':           r.address||'',
+      'Phone':             r.phone||'',
+      'Signup Date':       r.signup_date||'',
+      'Signup Event':      r.signup_event||'',
+      'Event Source Raw':  r.event_source_raw||'',
+      'Event Source':      r.event_source||''
+    }));
+  }
+  entry.status = 'done'; updatePill(entry);
+}
+
+async function runExtraction() {
+  btnExtract.disabled = true;
+  errorEl.style.display = 'none';
+  previewArea.style.display = 'none';
+  btnDownload.style.display = 'none';
+  csvData = [];
+
+  for (const entry of FILES) {
+    try { await extractFile(entry); csvData.push(...entry.rows); }
+    catch(e) {
+      entry.status = 'err'; updatePill(entry);
+      errorEl.textContent = `Error on "${entry.name}":\n${e.message}`;
+      errorEl.style.display = 'block';
+    }
+  }
+  btnExtract.disabled = false;
+  if (csvData.length > 0) { renderPreview(); btnDownload.style.display = 'inline-block'; }
+}
+
+function renderPreview() {
+  previewArea.style.display = 'block';
+  document.getElementById('preview-label').textContent = `Preview — ${csvData.length} record(s)`;
+  const cols = ['Email Address','First Name','Last Name','Signup Date','Signup Event','Event Source'];
+  const tbl = document.getElementById('preview-table');
+  tbl.innerHTML = '';
+  const thead = document.createElement('thead');
+  const hrow = document.createElement('tr');
+  cols.forEach(k => { const th = document.createElement('th'); th.textContent = k; hrow.appendChild(th); });
+  thead.appendChild(hrow); tbl.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  csvData.forEach(row => {
+    const tr = document.createElement('tr');
+    cols.forEach(k => { const td = document.createElement('td'); td.textContent = row[k]||'—'; tr.appendChild(td); });
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+}
+
+function downloadCSV() {
+  const esc = v => '"' + String(v).replace(/"/g,'""') + '"';
+  const blob = new Blob([
+    [COL_KEYS.map(esc).join(','), ...csvData.map(r => COL_KEYS.map(k => esc(r[k]||'')).join(','))].join('\r\n')
+  ], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'signup_export.csv'; a.click();
+}
+
+function clearAll() {
+  FILES.length = 0; csvData = [];
+  fileList.innerHTML = '';
+  previewArea.style.display = 'none';
+  btnDownload.style.display = 'none';
+  btnExtract.disabled = true;
+  errorEl.style.display = 'none';
+}
+</script>
+</body>
+</html>
